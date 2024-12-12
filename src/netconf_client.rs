@@ -160,7 +160,9 @@ impl NetconfClient {
             cmd.insert_str(cmd.rfind(" </filter>").unwrap(), &filter.unwrap().data);
         }
         self.send(&cmd)?;
+        dbg!(&cmd);
         let raw_rsp = self.get_reply()?;
+        dbg!(&raw_rsp);
         let mut deserialized_rsp = quick_xml::de::from_str::<GetRsp>(&raw_rsp).unwrap();
         deserialized_rsp.data = Some(NetconfClient::get_data(&raw_rsp).unwrap().to_string());
         self.check_response_message_id(&deserialized_rsp)?;
@@ -316,16 +318,34 @@ impl NetconfClient {
     pub fn get_data(text: &str) -> Option<&str> {
         let begin_begin_tag = "<data";
         let end_begin_tag = ">";
-        let value_begin = text.find(begin_begin_tag).unwrap();
-        let value_end = text[value_begin..]
-            .find(end_begin_tag)
-            .map(|i| i + value_begin)
-            .unwrap();
-        let end_element = text.find("</data>").unwrap();
-        if value_end + 1 > end_element {
-            return None;
+
+        match text.find(begin_begin_tag) {
+            Some(value_begin) => {
+                let value_end = text[value_begin..]
+                    .find(end_begin_tag)
+                    .map(|i| i + value_begin)
+                    .unwrap();
+                let end_element = text.find("</data>").unwrap();
+                if value_end + 1 > end_element {
+                    return None;
+                }
+                Some(&text[value_end + 1..end_element])
+            }
+            None => {
+                let begin_begin_tag = "<rpc-error";
+                let end_begin_tag = ">";
+                let value_begin = text.find(begin_begin_tag).unwrap();
+                let value_end = text[value_begin..]
+                    .find(end_begin_tag)
+                    .map(|i| i + value_begin)
+                    .unwrap();
+                let end_element = text.find("</rpc-error>").unwrap();
+                if value_end + 1 > end_element {
+                    return None;
+                }
+                Some(&text[value_end + 1..end_element])
+            }
         }
-        Some(&text[value_end + 1..end_element])
     }
 
     fn check_response_message_id<T: RpcRsp>(&self, rsp: &T) -> Result<(), NetconfClientError> {
