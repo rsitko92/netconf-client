@@ -166,6 +166,7 @@ pub struct Commit {}
 pub struct Filter {
     #[serde(rename = "type", serialize_with = "serialize_as_string_kebab_case")]
     pub filter_type: FilterType,
+    pub select: String,
     #[serde(rename = "$value")]
     pub data: String,
 }
@@ -272,6 +273,7 @@ pub enum DatastoreType {
 #[derive(strum_macros::ToString, Debug, PartialEq, Clone)]
 pub enum FilterType {
     Subtree,
+    Xpath,
 }
 
 fn serialize_as_string_kebab_case<S, T>(x: &T, s: S) -> Result<S::Ok, S::Error>
@@ -562,6 +564,7 @@ urn:ietf:params:netconf:base:1.0
                 },
                 filter: Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: " ".to_string(),
                 }),
             },
@@ -582,6 +585,37 @@ urn:ietf:params:netconf:base:1.0
     }
 
     #[test]
+    fn get_config_req_xpath() {
+        let model = GetConfigReq {
+            xmlns: XMLNS.to_string(),
+            message_id: 101,
+            get_config: GetConfig {
+                source: Target {
+                    target: DatastoreType::Running,
+                },
+                filter: Some(Filter {
+                    filter_type: FilterType::Xpath,
+                    select: r#"/interface/ethernet/qos[cos-mutation='test']"#.to_string(),
+                    data: "".to_string(),
+                }),
+            },
+        };
+        let req = to_string(&model).unwrap();
+        let expected_req = r#"
+<rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<get-config>
+<source>
+<running/>
+</source>
+<filter type="xpath" select="/interface/ethernet/qos[cos-mutation=&apos;test&apos;]"/>
+</get-config>
+</rpc>
+"#
+            .replace("\n", "");
+        assert_eq!(req, expected_req);
+    }
+
+    #[test]
     fn get_req() {
         let model = GetReq {
             xmlns: XMLNS.to_string(),
@@ -589,6 +623,7 @@ urn:ietf:params:netconf:base:1.0
             get: Get {
                 filter: Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: " ".to_string(),
                 }),
             },

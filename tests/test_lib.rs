@@ -98,7 +98,38 @@ fn get() {
         let rsp = client
             .get(Some(Filter {
                 filter_type: FilterType::Subtree,
+                select: "".to_string(),
                 data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
+            }))
+            .unwrap();
+        assert_eq!(
+            rsp.data,
+            Some("<users xmlns=\"ns:yang:test\"><name>Harry</name></users>".to_string())
+        );
+    });
+}
+
+#[test]
+#[serial]
+fn get_xpath() {
+    run_test(|| {
+        let mut client = setup_client();
+
+        client
+            .edit_config(
+                DatastoreType::Running,
+                r#"<users xmlns="ns:yang:test"><name>Harry</name></users>"#.to_string(),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let rsp = client
+            .get(Some(Filter {
+                filter_type: FilterType::Xpath,
+                select: r#"/users[name="Harry"]"#.to_string(),
+                data: "".to_string(),
             }))
             .unwrap();
         assert_eq!(
@@ -129,6 +160,7 @@ fn edit_config_running_database() {
                 DatastoreType::Running,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -170,6 +202,7 @@ fn edit_config_copy_config() {
                 DatastoreType::Startup,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -186,6 +219,7 @@ fn edit_config_copy_config() {
                 DatastoreType::Startup,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -205,6 +239,7 @@ fn delete_startup_data() {
                 DatastoreType::Startup,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -221,6 +256,7 @@ fn delete_startup_data() {
                 DatastoreType::Startup,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -252,6 +288,7 @@ fn edit_config_candidate_then_commit() {
                 DatastoreType::Running,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
@@ -286,6 +323,7 @@ fn discard_changes() {
                 DatastoreType::Running,
                 Some(Filter {
                     filter_type: FilterType::Subtree,
+                    select: "".to_string(),
                     data: r#"<users xmlns="ns:yang:test"></users>"#.to_string(),
                 }),
             )
