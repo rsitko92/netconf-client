@@ -47,6 +47,8 @@ impl NetconfClient {
             if result.ends_with("##") {
                 break;
             }
+
+            dbg!(&result, &bytes_read, &self.ssh_client.eof()?);
             if bytes_read == 0 || self.ssh_client.eof()? {
                 return Err(SSHClientError {
                     err: "Buffer is empty, SSH channel read terminated".to_string(),
